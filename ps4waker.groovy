@@ -53,10 +53,10 @@ tiles(scale: 2) {
         }
     }
 	standardTile("on", "device.switch", width: 2, height: 2, decoration: "flat") {
-			state "default", label:"On", action:"switch.on", icon:"https://raw.githubusercontent.com/fuzzysb/SmartThings/master/DeviceTypes/fuzzysb/Axis%20Gate%20Opener/GateOpen.png", backgroundColor:"#ffa81e"
+			state "default", label:"On", action:"switch.on", icon:"https://raw.githubusercontent.com/ChronoStriker1/PS4-Waker-Smartthings-Handler/master/ps4on.png", backgroundColor:"#ffa81e"
 		}	
 	standardTile("off", "device.switch", width: 2, height: 2, decoration: "flat") {
-			state "default", label:"Off", action:"switch.off", icon:"https://raw.githubusercontent.com/fuzzysb/SmartThings/master/DeviceTypes/fuzzysb/Axis%20Gate%20Opener/GateClosed.png", backgroundColor:"#79b821"
+			state "default", label:"Off", action:"switch.off", icon:"https://raw.githubusercontent.com/ChronoStriker1/PS4-Waker-Smartthings-Handler/master/ps4off.png", backgroundColor:"#79b821"
 		}
 	standardTile("refresh", "device.switch", width: 2, height: 2, decoration: "flat") {
 			state "default", label:"", action:"refresh.refresh", icon:"st.secondary.refresh"
