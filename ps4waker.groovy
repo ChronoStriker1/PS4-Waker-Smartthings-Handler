@@ -116,20 +116,27 @@ private parseHttpHeaders(String headers) {
         status:     status[1].toInteger(),
         reason:     status[2]
     ]
-
     return result
 }
 
 private def parseHttpResponse(String data) {
     log.debug("parseHttpResponse(${data})")
-    def splitresponse = data.split("=")
-    def port = splitresponse[0]
-    def status = splitresponse[1]
-    if (status == "active"){
-        createEvent(name: "switch", value: "on", descriptionText: "$device.displayName is on", isStateChange: "true")
-    } else if (status == "inactive"){
-        createEvent(name: "switch", value: "off", descriptionText: "$device.displayName is off", isStateChange: "true")
+    def splitresponse = data.split(",")
+    def status
+    if (splitresponse[0] != '{"status":"success"}') {
+        def port1 = splitresponse[7].split(":")
+        def port = port1[1]
+        def status1 = splitresponse[3].split(":")
+        status = status1[1]
+        if (status == '"OK"'){
+            createEvent(name: "switch", value: "open", descriptionText: "$device.displayName is on", isStateChange: "true")
+        } else if (status == '"Standby"'){
+            createEvent(name: "switch", value: "closed", descriptionText: "$device.displayName is off", isStateChange: "true")
+        }
+    } else {
+        status = "Redo"
     }
+    log.debug ("Status: ${status}")
     return status
 }
 
@@ -154,11 +161,9 @@ def off() {
 }
 
 def open(){
-log.debug "Checking DNI"
-updateDNI()
 try {
     log.debug "Executing On"
-    def openResult = postopen()
+    def openResult = getopen()
     log.debug "${openResult}"
     sendHubCommand(openResult)
     }
@@ -166,15 +171,13 @@ try {
     {
         log.debug "Hit Exception $e"
     }
-createEvent(name: "switch", value: "on", descriptionText: "$device.displayName is on", isStateChange: "true")
+createEvent(name: "switch", value: "open", descriptionText: "$device.displayName is on", isStateChange: "true")
 }
 
 def close(){
-log.debug "Checking DNI"
-updateDNI()
 try {
     log.debug "Executing Off"
-    def closeResult = postclose()
+    def closeResult = getclose()
     log.debug "${closeResult}"
     sendHubCommand(closeResult)
     }
@@ -182,15 +185,12 @@ try {
     {
         log.debug "Hit Exception $e"
     }
-createEvent(name: "switch", value: "off", descriptionText: "$device.displayName is off", isStateChange: "true")
+createEvent(name: "switch", value: "closed", descriptionText: "$device.displayName is off", isStateChange: "true")
 }
 
-def postopen(){
-    //def userpassascii = "${settings.username}:${settings.password}"
-    //def userpass = "Basic " + userpassascii.encodeAsBase64().toString()
+def getopen(){
     def headers = [:]
     headers.put("HOST","${settings.ServerIP}:${settings.Port}")
-    //headers.put("Authorization","${userpass}")
     def result = new physicalgraph.device.HubAction(
         method: "GET",
         path: "/ps4/${settings.PS4IP}/on",
@@ -199,12 +199,9 @@ def postopen(){
     return result
 }
 
-def postclose(){
-    //def userpassascii = "${settings.username}:${settings.password}"
-    //def userpass = "Basic " + userpassascii.encodeAsBase64().toString()
+def getclose(){
     def headers = [:]
     headers.put("HOST","${settings.ServerIP}:${settings.Port}") 
-    //headers.put("Authorization","${userpass}")
     def result = new physicalgraph.device.HubAction(
         method: "GET",
         path: "/ps4/${settings.PS4IP}/off",
@@ -214,11 +211,8 @@ def postclose(){
 }
 
 def getstatus(){
-    //def userpassascii = "${settings.username}:${settings.password}"
-    //def userpass = "Basic " + userpassascii.encodeAsBase64().toString()
     def headers = [:]
     headers.put("HOST","${settings.ServerIP}:${settings.Port}") 
-    //headers.put("Authorization","${userpass}")
     def result = new physicalgraph.device.HubAction(
         method: "GET",
         path: "/ps4/${settings.PS4IP}/info",
@@ -227,25 +221,7 @@ def getstatus(){
     return result
 }
 
-private String createDNI(ipaddr, port) { 
-    log.debug("createDNI(${ipaddr}, ${port})")
-
-    def hexIp = ipaddr.tokenize('.').collect {
-        String.format('%02X', it.toInteger())
-    }.join()
-
-    def hexPort = String.format('%04X', port.toInteger())
-    log.debug "Hex IP:Port: ${hexIp}:${hexPort}"
-    return "${hexIp}:${hexPort}"
-}
-
 private def delayHubAction(ms) {
     log.debug("delayHubAction(${ms})")
     return new physicalgraph.device.HubAction("delay ${ms}")
-}
-
-private updateDNI() { 
-    if (device.deviceNetworkId != state.dni) {
-        device.deviceNetworkId = state.dni
-    }
 }
